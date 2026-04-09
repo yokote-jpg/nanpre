@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nanpure-v1';
+const CACHE_NAME = 'nanpre-v2';
 const FILES = [
   './index.html',
   './manifest.json'
