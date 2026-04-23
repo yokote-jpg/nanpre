@@ -209,6 +209,17 @@
 </div>
 
 <script>
+// ── パスワード認証 ──────────────────────
+(function() {
+  const correct = 'nanpre2024';
+  const input = prompt('パスワードを入力してください');
+  if (input !== correct) {
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-size:20px;font-family:sans-serif;">パスワードが違います</div>';
+    throw new Error('unauthorized');
+  }
+})();
+// ────────────────────────────────────────
+  
 // ── データ ──────────────────────────────
 const board     = Array.from({length:9}, () => Array(9).fill(''));
 const candidate = Array.from({length:9}, () => Array(9).fill(''));
