@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="manifest" href="manifest.json">
 <title>ナンプレ補助</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -21,55 +20,6 @@
     -webkit-user-select: none;
   }
 
-  /* ── パスワード画面 ── */
-  #pw-screen {
-    position: fixed;
-    inset: 0;
-    background: #f0f0f0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    z-index: 999;
-  }
-  #pw-screen h1 {
-    font-size: 22px;
-    color: #333;
-  }
-  #pw-screen p {
-    font-size: 13px;
-    color: #666;
-    text-align: center;
-    padding: 0 24px;
-  }
-  #pw-input {
-    width: 220px;
-    height: 44px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    padding: 0 14px;
-    font-size: 18px;
-    text-align: center;
-    outline: none;
-  }
-  #pw-btn {
-    width: 220px;
-    height: 44px;
-    background: #007AFF;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 17px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  #pw-error {
-    color: #FF3B30;
-    font-size: 14px;
-    min-height: 18px;
-  }
-
   /* ── 上部パネル ── */
   #panel-top {
     display: flex;
@@ -81,6 +31,7 @@
     flex-shrink: 0;
   }
 
+  /* スイッチ */
   #switch-wrap {
     display: flex;
     align-items: center;
@@ -119,6 +70,7 @@
   }
   .toggle input:checked ~ .toggle-thumb { left: 21px; }
 
+  /* ボタン共通 */
   .btn {
     flex: 1;
     height: 38px;
@@ -160,15 +112,18 @@
     position: relative;
   }
 
+  /* 3×3ブロック境界 */
   .cell:nth-child(3n+1)  { border-left:  2px solid #333; }
   .cell:nth-child(n+1):nth-child(-n+9)   { border-top: 2px solid #333; }
   .cell:nth-child(n+28):nth-child(-n+36) { border-top: 2px solid #333; }
   .cell:nth-child(n+55):nth-child(-n+63) { border-top: 2px solid #333; }
 
+  /* 背景色 */
   .cell.block-white    { background: #ffffff; }
   .cell.block-blue     { background: #D0E8FF; }
   .cell.selected       { background: #ADD8E6 !important; }
 
+  /* 確定数字 */
   .cell-number {
     position: absolute;
     inset: 0;
@@ -180,6 +135,7 @@
     line-height: 1;
   }
 
+  /* 候補数字（3×3グリッド） */
   .cand-slot {
     display: flex;
     align-items: center;
@@ -189,7 +145,7 @@
     line-height: 1;
   }
 
-  /* ── 下部パネル ── */
+  /* ── 下部パネル（数字ボタン） ── */
   #panel-bottom {
     display: flex;
     background: #e8e8e8;
@@ -218,28 +174,20 @@
 </head>
 <body>
 
-<!-- パスワード画面 -->
-<div id="pw-screen">
-  <h1>ナンプレ補助</h1>
-  <p>ご購入いただきありがとうございます。<br>パスワードを入力してください。</p>
-  <input type="password" id="pw-input" placeholder="パスワード" autocomplete="off">
-  <div id="pw-error"></div>
-  <button id="pw-btn">入力</button>
-</div>
-
 <!-- 上部パネル -->
 <div id="panel-top">
   <button class="btn" id="btn-get">GET</button>
   <button class="btn" id="btn-clr">CLR</button>
   <button class="btn" id="btn-end">END</button>
   <div id="switch-wrap">
-    <span id="switch-label">電卓配置</span>
+    <span id="switch-label">メモモード</span>
     <label class="toggle">
       <input type="checkbox" id="layout-switch">
       <div class="toggle-track"></div>
       <div class="toggle-thumb"></div>
     </label>
   </div>
+
 </div>
 
 <!-- グリッド -->
@@ -261,45 +209,14 @@
 </div>
 
 <script>
-// ══════════════════════════════════════════
-// ▼▼▼ パスワードをここで変更してください ▼▼▼
-const CORRECT_PASSWORD = 'nanpre2024';
-// ▲▲▲ パスワードをここで変更してください ▲▲▲
-// ══════════════════════════════════════════
-
-// パスワード認証
-const PW_KEY = 'nanpure_auth';
-const pwScreen = document.getElementById('pw-screen');
-
-function checkAuth() {
-  if (sessionStorage.getItem(PW_KEY) === 'ok') {
-    pwScreen.style.display = 'none';
-  }
-}
-
-document.getElementById('pw-btn').addEventListener('click', () => {
-  const val = document.getElementById('pw-input').value;
-  if (val === CORRECT_PASSWORD) {
-    sessionStorage.setItem(PW_KEY, 'ok');
-    pwScreen.style.display = 'none';
-  } else {
-    document.getElementById('pw-error').textContent = 'パスワードが違います';
-    document.getElementById('pw-input').value = '';
-  }
-});
-
-document.getElementById('pw-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('pw-btn').click();
-});
-
-checkAuth();
-
 // ── データ ──────────────────────────────
 const board     = Array.from({length:9}, () => Array(9).fill(''));
 const candidate = Array.from({length:9}, () => Array(9).fill(''));
+const myAnswer = Array.from({length:9}, () => Array(9).fill(false));    //2026.04.23追加
 let selectedRow = -1;
 let selectedCol = -1;
-let calcLayout  = false;
+let calcLayout  = false; // false=テンキー配置、true=電卓配置
+let memoMode = false;
 let autoCandidate = false;
 
 // ── グリッド生成 ─────────────────────────
@@ -309,6 +226,7 @@ function blockColor(r, c) {
   return ((Math.floor(r/3) + Math.floor(c/3)) % 2 === 0) ? 'block-white' : 'block-blue';
 }
 
+// セルを81個生成
 for (let r = 0; r < 9; r++) {
   for (let c = 0; c < 9; c++) {
     const cell = document.createElement('div');
@@ -316,6 +234,7 @@ for (let r = 0; r < 9; r++) {
     cell.dataset.r = r;
     cell.dataset.c = c;
 
+    // 候補数字スロット（3×3）
     for (let i = 1; i <= 9; i++) {
       const slot = document.createElement('div');
       slot.className = 'cand-slot';
@@ -323,6 +242,7 @@ for (let r = 0; r < 9; r++) {
       cell.appendChild(slot);
     }
 
+    // 確定数字オーバーレイ
     const numDiv = document.createElement('div');
     numDiv.className = 'cell-number';
     cell.appendChild(numDiv);
@@ -367,25 +287,38 @@ function renderAll() {
     for (let c = 0; c < 9; c++) {
       const cell = gridEl.children[r * 9 + c];
 
+      // 背景色
       cell.className = 'cell ' +
         ((r === selectedRow && c === selectedCol) ? 'selected' : blockColor(r, c));
 
+      // 確定数字
       const numDiv = cell.querySelector('.cell-number');
       numDiv.textContent = board[r][c];
-
+      // ↓ 追加
+      if (myAnswer[r][c] && autoCandidate) {
+        numDiv.style.color = 'blue';
+      } else {
+        numDiv.style.color = 'black';
+      }
+      
+      // 候補数字
       const slots = cell.querySelectorAll('.cand-slot');
+      // まず全スロットをクリア
       for (let i = 1; i <= 9; i++) {
         slots[i-1].textContent = '';
         slots[i-1].style.order = '';
       }
+      // 候補数字を正しいスロットに配置
       if (board[r][c] === '' && candidate[r][c] !== '') {
         for (let i = 1; i <= 9; i++) {
           if (candidate[r][c].includes(String(i))) {
             let slotIndex;
             if (calcLayout) {
+              // 電卓配置: 7→0, 8→1, 9→2, 4→3, 5→4, 6→5, 1→6, 2→7, 3→8
               const tbl = {1:6, 2:7, 3:8, 4:3, 5:4, 6:5, 7:0, 8:1, 9:2};
               slotIndex = tbl[i];
             } else {
+              // テンキー配置: 1→0, 2→1, ..., 9→8
               slotIndex = i - 1;
             }
             slots[slotIndex].textContent = String(i);
@@ -415,29 +348,61 @@ function getCandidates(r, c) {
 }
 
 // ── ボタンイベント ────────────────────────
+
+// メモモードボタン
 document.querySelectorAll('.num-btn').forEach(btn => {
   btn.addEventListener('pointerdown', () => {
     if (selectedRow < 0) return;
+    const r = selectedRow;
+    const c = selectedCol;
     const num = btn.dataset.num;
-    if (board[selectedRow][selectedCol] === num) {
-      board[selectedRow][selectedCol] = '';
-    } else {
-      board[selectedRow][selectedCol] = num;
-    }
-    candidate[selectedRow][selectedCol] = '';
 
-    if (autoCandidate) {
-      for (let r = 0; r < 9; r++)
-        for (let c = 0; c < 9; c++)
-          if (board[r][c] === '')
-            candidate[r][c] = getCandidates(r, c);
+    if (memoMode) {
+      // ── メモモード：候補数字のトグル ──
+      if (board[r][c] !== '') return;  // 確定数字セルは触らない
+      if (candidate[r][c].includes(num)) {
+        candidate[r][c] = candidate[r][c].replace(num, '');  // 既にあれば削除
+      } else {
+        candidate[r][c] += num;  // なければ追加
+      }
+    } else {
+      // ── 解答モード：従来通り ──
+      if (board[r][c] === num) {
+        board[r][c] = '';  // 同じ数字で消去
+        myAnswer[r][c] = false;   // ← 追加
+      } else {
+        board[r][c] = num;
+        myAnswer[r][c] = true;    // ← 追加
+      }
+      candidate[r][c] = '';
+
+      if (autoCandidate) {
+        for (let i = 0; i < 9; i++)
+          for (let j = 0; j < 9; j++)
+            if (board[i][j] === '') {
+              // 影響セルのみ候補から削除
+              if (board[r][c] !== '' &&
+                 (i === r || j === c ||
+                 (Math.floor(i/3) === Math.floor(r/3) &&
+                  Math.floor(j/3) === Math.floor(c/3)))) {
+                candidate[i][j] = candidate[i][j].replace(num, '');
+              }
+            }
+      }
     }
     renderAll();
   });
 });
 
+// GET
 document.getElementById('btn-get').addEventListener('pointerdown', () => {
-  autoCandidate = true;
+  // ── 追加：問題数字のmyAnswerをすべてFalseに ──
+  for (let r = 0; r < 9; r++)
+    for (let c = 0; c < 9; c++)
+      if (board[r][c] !== '')
+        myAnswer[r][c] = false;
+  // ────────────────────────────────────────────
+  autoCandidate = true;  // ← 追加
   for (let r = 0; r < 9; r++)
     for (let c = 0; c < 9; c++)
       if (board[r][c] === '')
@@ -445,32 +410,33 @@ document.getElementById('btn-get').addEventListener('pointerdown', () => {
   renderAll();
 });
 
+// CLR
 document.getElementById('btn-clr').addEventListener('pointerdown', () => {
   autoCandidate = false;
   for (let r = 0; r < 9; r++)
     for (let c = 0; c < 9; c++) {
       board[r][c]     = '';
       candidate[r][c] = '';
+      myAnswer[r][c]  = false;  // ← 追加
     }
   selectedRow = -1;
   selectedCol = -1;
   renderAll();
 });
 
+// END
 document.getElementById('btn-end').addEventListener('pointerdown', () => {
   window.close();
 });
 
+// スイッチ
 document.getElementById('layout-switch').addEventListener('change', function() {
-  calcLayout = this.checked;
+  //calcLayout = this.checked;
+  memoMode = this.checked;
   renderAll();
 });
 
-// PWA Service Worker 登録
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js');
-}
-
+// 初期描画
 renderAll();
 </script>
 </body>
