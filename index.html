@@ -306,7 +306,9 @@ function renderAll() {
       const numDiv = cell.querySelector('.cell-number');
       numDiv.textContent = board[r][c];
       // ↓ 追加
-      if (myAnswer[r][c] && autoCandidate) {
+      if (hasConflict(r, c)) {
+        numDiv.style.color = 'red';
+      } else if (myAnswer[r][c] && autoCandidate) {
         numDiv.style.color = 'blue';
       } else {
         numDiv.style.color = 'black';
@@ -338,6 +340,24 @@ function renderAll() {
       }
     }
   }
+}
+
+// ── 競合チェック ─────────────────────────
+function hasConflict(r, c) {
+  const s = board[r][c];
+  if (!s) return false;
+  for (let i = 0; i < 9; i++) {
+    for (let j = 0; j < 9; j++) {
+      if (i === r && j === c) continue;
+      if (board[i][j] === s) {
+        if (i === r) return true;
+        if (j === c) return true;
+        if (Math.floor(i/3) === Math.floor(r/3) &&
+            Math.floor(j/3) === Math.floor(c/3)) return true;
+      }
+    }
+  }
+  return false;
 }
 
 // ── 候補計算 ─────────────────────────────
