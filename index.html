@@ -224,6 +224,7 @@
 const board     = Array.from({length:9}, () => Array(9).fill(''));
 const candidate = Array.from({length:9}, () => Array(9).fill(''));
 const myAnswer = Array.from({length:9}, () => Array(9).fill(false));    //2026.04.23追加
+const solution = Array.from({length:9}, () => Array(9).fill(''));       //2026.04.25追加
 let selectedRow = -1;
 let selectedCol = -1;
 let calcLayout  = false; // false=テンキー配置、true=電卓配置
@@ -306,12 +307,15 @@ function renderAll() {
       const numDiv = cell.querySelector('.cell-number');
       numDiv.textContent = board[r][c];
       // ↓ 追加
-      if (hasConflict(r, c)) {
-        numDiv.style.color = 'red';
-      } else if (myAnswer[r][c] && autoCandidate) {
-        numDiv.style.color = 'blue';
+      if (myAnswer[r][c] && autoCandidate) {
+        // 正解配列と比較
+        if (board[r][c] !== solution[r][c]) {
+          numDiv.style.color = 'red';   // 不正解→赤
+        } else {
+          numDiv.style.color = 'blue';  // 正解→青
+        }
       } else {
-        numDiv.style.color = 'black';
+        numDiv.style.color = 'black';   // 問題数字→黒
       }
       
       // 候補数字
@@ -358,6 +362,39 @@ function hasConflict(r, c) {
     }
   }
   return false;
+}
+
+// ── ソルバー（バックトラッキング） ────────
+function solveSudoku(bd) {
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      if (bd[r][c] === '') {
+        for (let n = 1; n <= 9; n++) {
+          const s = String(n);
+          if (isValid(bd, r, c, s)) {
+            bd[r][c] = s;
+            if (solveSudoku(bd)) return true;
+            bd[r][c] = '';
+          }
+        }
+        return false;  // どの数字も入らない→バックトラック
+      }
+    }
+  }
+  return true;  // 全セル埋まった→解けた
+}
+
+function isValid(bd, r, c, s) {
+  for (let i = 0; i < 9; i++) {
+    if (bd[r][i] === s) return false;  // 同じ行
+    if (bd[i][c] === s) return false;  // 同じ列
+  }
+  const br = Math.floor(r/3)*3;
+  const bc = Math.floor(c/3)*3;
+  for (let dr = 0; dr < 3; dr++)
+    for (let dc = 0; dc < 3; dc++)
+      if (bd[br+dr][bc+dc] === s) return false;  // 同じ3×3
+  return true;
 }
 
 // ── 候補計算 ─────────────────────────────
@@ -427,13 +464,24 @@ document.querySelectorAll('.num-btn').forEach(btn => {
 
 // GET
 document.getElementById('btn-get').addEventListener('pointerdown', () => {
-  // ── 追加：問題数字のmyAnswerをすべてFalseに ──
+  // 問題数字のmyAnswerをすべてFalseに
   for (let r = 0; r < 9; r++)
     for (let c = 0; c < 9; c++)
       if (board[r][c] !== '')
         myAnswer[r][c] = false;
-  // ────────────────────────────────────────────
-  autoCandidate = true;  // ← 追加
+
+  // ── ソルバーで正解を計算して保存 ──
+  const work = Array.from({length:9}, (_, r) => [...board[r]]);
+  if (solveSudoku(work)) {
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
+        solution[r][c] = work[r][c];
+  } else {
+    alert('この問題は解けませんでした（入力ミスの可能性があります）');
+    return;
+  }
+
+  autoCandidate = true;
   for (let r = 0; r < 9; r++)
     for (let c = 0; c < 9; c++)
       if (board[r][c] === '')
