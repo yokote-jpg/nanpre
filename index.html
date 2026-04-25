@@ -308,12 +308,13 @@ function renderAll() {
       numDiv.textContent = board[r][c];
       // ↓ 追加
       if (myAnswer[r][c] && autoCandidate) {
-        // 正解配列と比較
-        if (board[r][c] !== solution[r][c]) {
-          numDiv.style.color = 'red';   // 不正解→赤
+        if (solution[r][c] !== '' && board[r][c] !== solution[r][c]) {
+          numDiv.style.color = 'red';   // 正解と不一致→赤
         } else {
           numDiv.style.color = 'blue';  // 正解→青
         }
+      } else if (hasConflict(r, c)) {
+        numDiv.style.color = 'red';     // 問題数字の競合→赤
       } else {
         numDiv.style.color = 'black';   // 問題数字→黒
       }
@@ -478,7 +479,7 @@ document.getElementById('btn-get').addEventListener('pointerdown', () => {
         solution[r][c] = work[r][c];
   } else {
     alert('この問題は解けませんでした（入力ミスの可能性があります）');
-    return;
+    // return を削除！autoCandidate=trueまで進める
   }
 
   autoCandidate = true;
